@@ -1,0 +1,51 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution files
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Django specific
+*.sqlite3
+db.sqlite3-journal
+*.pot
+*.pyc
+*.pyo
+*.pyd
+
+# Media files
+/media/
+*.media
+
+# Local settings
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+*.log.*
+debug.log
+
+# Static files
+staticfiles/
+static/
+static_root/
+
+# Virtual environment
+venv/
+ENV/
+.env/
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+
+
+db.sqlite3
