@@ -35,7 +35,6 @@ def predict():
     try:
         
         image_file = request.files['image_file']
-        print(image_file)
         model_name = request.form.get('model')
         if not image_file:
             return jsonify({'error': "No image given"})
