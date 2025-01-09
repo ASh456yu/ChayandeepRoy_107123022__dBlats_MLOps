@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat-Dog Classifier</title>
+    <style>
+        body,
+        h1,
+        p,
+        form,
+        label,
+        input,
+        select,
+        button,
+        video,
+        img,
+        div {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .classifier {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .classifier__header {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .classifier__title {
+            font-size: 2rem;
+            color: #444;
+        }
+
+        .classifier__main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .classifier__form {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .classifier__form-group {
+            margin-bottom: 15px;
+        }
+
+        .classifier__label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .classifier__input,
+        .classifier__select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+
+        .classifier__input:focus,
+        .classifier__select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .classifier__button {
+            background: #007bff;
+            color: #fff;
+            font-size: 1rem;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .classifier__button:hover {
+            background: #0056b3;
+        }
+
+        .classifier__button--primary {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .classifier__button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .classifier__video,
+        .classifier__captured-image {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .classifier__video.active,
+        .classifier__captured-image.active {
+            display: block;
+        }
+
+        .classifier__result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .classifier__footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .classifier__footer-text {
+            font-size: 0.9rem;
+            color: #777;
+        }
+    </style>
+</head>
+
+<body class="classifier">
+    <header class="classifier__header">
+        <h1 class="classifier__title">Cat-Dog Classifier</h1>
+    </header>
+
+    <main class="classifier__main">
+        <form id="uploadForm" class="classifier__form" enctype="multipart/form-data">
+            <div class="classifier__form-group">
+                <label for="imageInput" class="classifier__label">Upload an Image:</label>
+                <input type="file" id="imageInput" name="image_file" class="classifier__input" accept="image/*">
+            </div>
+
+            <div class="classifier__form-group">
+                <label for="modelSelect" class="classifier__label">Select a Model:</label>
+                <select id="modelSelect" name="model" class="classifier__select" required>
+                    <option value="">Select a Model</option>
+                    <option value="Deep Neural Network">Deep Neural Network</option>
+                    <option value="Resnet 152">Resnet 152</option>
+                </select>
+            </div>
+
+            <button type="submit" class="classifier__button classifier__button--primary">Predict</button>
+        </form>
+
+        <div class="classifier__camera-controls">
+            <button id="startCamera" class="classifier__button">Start Camera</button>
+            <video id="video" class="classifier__video" autoplay muted></video>
+            <button id="captureFrame" class="classifier__button">Capture Frame</button>
+        </div>
+
+        <img id="capturedImage" class="classifier__captured-image" alt="Captured Image">
+        <div id="result" class="classifier__result"></div>
+    </main>
+
+    <footer class="classifier__footer">
+        <p class="classifier__footer-text">© 2025 Cat-Dog Classifier</p>
+    </footer>
+
+    <script>
+        const startCameraButton = document.getElementById("startCamera");
+        const captureFrameButton = document.getElementById("captureFrame");
+        const videoElement = document.getElementById("video");
+        const capturedImage = document.getElementById("capturedImage");
+        const uploadForm = document.getElementById("uploadForm");
+        const resultDiv = document.getElementById("result");
+
+        let currentStream = null;
+
+        startCameraButton.addEventListener("click", async () => {
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = currentStream;
+                videoElement.style.display = "block";
+                videoElement.play();
+            } catch (error) {
+                console.error("Error starting the camera:", error);
+            }
+        });
+
+        captureFrameButton.addEventListener("click", () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const context = canvas.getContext("2d");
+
+            if (context) {
+                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                const frameDataURL = canvas.toDataURL("image/jpg");
+
+                capturedImage.src = frameDataURL;
+                capturedImage.style.display = "block";
+
+                const blob = dataURLToBlob(frameDataURL);
+                const file = new File([blob], "captured_frame.jpg", { type: "image/jpg" });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                document.getElementById("imageInput").files = dataTransfer.files;
+            }
+        });
+
+        function dataURLToBlob(dataURL) {
+            const parts = dataURL.split(",");
+            const byteString = atob(parts[1]);
+            const mimeString = parts[0].split(":")[1].split(";")[0];
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const intArray = new Uint8Array(arrayBuffer);
+
+            for (let i = 0; i < byteString.length; i++) {
+                intArray[i] = byteString.charCodeAt(i);
+            }
+
+            return new Blob([arrayBuffer], { type: mimeString });
+        }
+
+        uploadForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(uploadForm);
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `<h3 style="color: red;">Error: ${errorData.error}</h3>`;
+                    return;
+                }
+
+                const data = await response.json();
+                resultDiv.innerHTML = `<h3>Prediction: It's a ${data.result}</h3>`;
+            } catch (error) {
+                console.error("Error submitting form:", error);
+                resultDiv.innerHTML = `<h3 style="color: red;">An error occurred</h3>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
