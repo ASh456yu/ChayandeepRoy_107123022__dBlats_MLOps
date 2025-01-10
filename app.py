@@ -1,36 +1,25 @@
 import pickle
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, g
 from PIL import Image
 import numpy as np
 
-import gdown
-import pickle
-
-GOOGLE_DRIVE_FILE_ID = "1DFRgHVZwZmXZ3zxER6F_RSdRwJ8DmjS5"
-MODEL_FILE_PATH = "model1.pkl"
-
-def download_model():
-    url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}"
-    gdown.download(url, MODEL_FILE_PATH, quiet=False)
-
-try:
-    with open(MODEL_FILE_PATH, "rb") as f:
-        model = pickle.load(f)
-except FileNotFoundError:
-    print("Model not found locally. Downloading from Google Drive...")
-    download_model()
-    with open(MODEL_FILE_PATH, "rb") as f:
-        model = pickle.load(f)
-
-
 app = Flask(__name__, template_folder='templates')
 
+def load_model1():
+    if 'model1' not in g:
+        with open("Saved Models/model_pickle1", "rb") as f:
+            g.model1 = pickle.load(f)
+    return g.model1
+
+def load_model2():
+    if 'model2' not in g:
+        with open("Saved Models/model_pickle2", "rb") as f:
+            g.model2 = pickle.load(f)
+    return g.model2
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -48,8 +37,14 @@ def predict():
         image_array = np.array(image)
         image_array = np.expand_dims(image_array, axis=0)
 
-        result = model.predict(image_array)
+        if model_name == "Deep Neural Network":
+            model = load_model1()
+        elif model_name == "Resnet 152":
+            model = load_model2()
+        else:
+            return jsonify({'error': 'Invalid model specified'}), 400
 
+        result = model.predict(image_array)
         prediction = "dog" if result > 0.5 else "cat"
         return jsonify({'result': prediction}), 200
 
@@ -57,7 +52,6 @@ def predict():
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         return jsonify({'error': f"An error occurred: {str(e)}"}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
